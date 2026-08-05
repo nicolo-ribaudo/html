@@ -33124,6 +33124,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
   events</i> flag set, it must run the following steps:</p>
 
   <ol>
+   <li><p>Let <var>acMapping</var> be <span>AsyncContextSnapshot</span>().</p></li>
+
    <li>
     <p>If the element's <span>node document</span> is not <span>fully active</span>:</p>
 
@@ -33211,7 +33213,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
 
          <li><p>If <i>maybe omit events</i> is not set or <var>previousURL</var> is not equal to
          <var>urlString</var>, then <span data-x="concept-event-fire">fire an event</span> named
-         <code data-x="event-load">load</code> at the <code>img</code> element.</p></li>
+         <code data-x="event-load">load</code> at the <code>img</code> element with
+         <var>acMapping</var>.</p></li>
         </ol>
        </li>
 
@@ -33268,7 +33271,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
         </ul>
 
         <p>then <span data-x="concept-event-fire">fire an event</span> named <code
-        data-x="event-error">error</code> at the <code>img</code> element.</p>
+        data-x="event-error">error</code> at the <code>img</code> element with
+        <var>acMapping</var>.</p>
        </li>
       </ol>
      </li>
@@ -33303,7 +33307,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
 
        <li><p>If <i>maybe omit events</i> is not set or <var>previousURL</var> is not equal to
        <var>selected source</var>, then <span data-x="concept-event-fire">fire an event</span>
-       named <code data-x="event-error">error</code> at the <code>img</code> element.</p></li>
+       named <code data-x="event-error">error</code> at the <code>img</code> element with
+       <var>acMapping</var>.</p></li>
       </ol>
      </li>
 
@@ -33470,7 +33475,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
        <li><p>If <i>maybe omit events</i> is not set or <var>previousURL</var> is not equal to
        <var>urlString</var>, then <span>queue an element task</span> on the <span>DOM manipulation task source</span>
        given the <code>img</code> element to <span data-x="concept-event-fire">fire an event</span>
-       named <code data-x="event-load">load</code> at the <code>img</code> element.</p></li>
+       named <code data-x="event-load">load</code> at the <code>img</code> element with
+       <var>acMapping</var>.</p></li>
       </ol>
       <!--TODO what if the image is broken?
           TODO change state and fire in the same task? -->
@@ -33512,7 +33518,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
          <span data-x="img-error">broken</span>.</p></li>
 
          <li><p><span data-x="concept-event-fire">Fire an event</span> named <code
-         data-x="event-error">error</code> at the <code>img</code> element.</p></li>
+         data-x="event-error">error</code> at the <code>img</code> element with
+         <var>acMapping</var>.</p></li>
         </ol>
        </li>
 
@@ -33526,7 +33533,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
 
          <li><p>If <i>maybe omit events</i> is not set or <var>previousURL</var> is not equal to
          <var>urlString</var>, then <span data-x="concept-event-fire">fire an event</span> named
-         <code data-x="event-error">error</code> at the <code>img</code> element.</p></li>
+         <code data-x="event-error">error</code> at the <code>img</code> element with
+         <var>acMapping</var>.</p></li>
         </ol>
        </li>
       </ol>
@@ -33564,7 +33572,8 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
 
        <li><p>If <i>maybe omit events</i> is not set or <var>previousURL</var> is not equal to
        <var>urlString</var>, then <span data-x="concept-event-fire">fire an event</span> named
-       <code data-x="event-load">load</code> at the <code>img</code> element.</p></li>
+       <code data-x="event-load">load</code> at the <code>img</code> element with
+       <var>acMapping</var>.</p></li>
       </ol>
      </dd>
 
@@ -33579,7 +33588,7 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
      <var>urlString</var>, <span>queue an element task</span> on the <span>DOM manipulation task
      source</span> given the <code>img</code> element to <span data-x="concept-event-fire">fire an
      event</span> named <code data-x="event-error">error</code> at the <code>img</code>
-     element.</p></dd>
+     element with <var>acMapping</var>.</p></dd>
     </dl>
    </li>
   </ol>
@@ -34373,8 +34382,12 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
      <li><p><span data-x="prepare an image for presentation">Prepare <var>image request</var> for
      presentation</span> given the <code>img</code> element.</p></li>
 
-     <li><p><span data-x="concept-event-fire">Fire an event</span> named <code
-     data-x="event-load">load</code> at the <code>img</code> element.</p></li>
+     <li>
+      <p><span data-x="concept-event-fire">Fire an event</span> named <code
+      data-x="event-load">load</code> at the <code>img</code> element.</p>
+
+      <p class="note">At this point the current <span>Async Context Mapping</span> is empty.</p>
+     </li>
     </ol>
    </li>
   </ol>
