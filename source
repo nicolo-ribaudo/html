@@ -11785,6 +11785,10 @@ partial interface <dfn id="document" data-lt="">Document</dfn> {
   <p>Each <code>Document</code> has an <dfn>open dialogs list</dfn>, which is a <span>list</span> of
   <code>dialog</code> elements, initially empty.</p>
 
+  <p>Each <code>Document</code> has a <dfn data-x="document container load Async Context
+  Mapping">container load Async Context Mapping</dfn>, which is an <span>Async Context
+  Mapping</span> or null, initially null.</p>
+
   <h4>The <code>DocumentOrShadowRoot</code> interface</h4>
 
   <p><cite>DOM</cite> defines the <code data-x="DOM
@@ -35575,6 +35579,8 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
   data-x="process-iframe-initial-insertion"><var>initialInsertion</var></dfn> (default false):</p>
 
   <ol>
+   <li><p>Let <var>acMapping</var> be <span>AsyncContextSnapshot</span>().</p></li>
+
    <li>
     <p>If <var>element</var>'s <code data-x="attr-iframe-srcdoc">srcdoc</code> attribute is
     specified:</p>
@@ -35603,8 +35609,8 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
      <li>
       <p><i>Navigate to the srcdoc resource</i>: <span>Navigate an <code>iframe</code> or
       <code>frame</code></span> given <var>element</var>, <code>about:srcdoc</code>, the empty
-      string, and the value of <var>element</var>'s <code data-x="attr-iframe-srcdoc">srcdoc</code>
-      attribute.</p>
+      string, <var>acMapping</var>, and the value of <var>element</var>'s <code
+      data-x="attr-iframe-srcdoc">srcdoc</code> attribute.</p>
 
       <p>The resulting <code>Document</code> must be considered <span>an <code>iframe</code> <code
       data-x="attr-iframe-srcdoc">srcdoc</code> document</span>.</p>
@@ -35627,7 +35633,13 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
       <var>initialInsertion</var> is true:</p>
 
       <ol>
-       <li><p>Run the <span>iframe load event steps</span> given <var>element</var>.</p></li>
+       <li>
+        <p>Run the <span>iframe load event steps</span> given <var>element</var>.</p>
+
+        <p class="note">This step runs synchronously with the one that would have captured the
+        <span>Async Context Mapping</span>, so the current <span>Async Context Mapping</span> is
+        still that same value.</p>
+       </li>
 
        <li><p>Return.</p></li>
       </ol>
@@ -35657,7 +35669,8 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
      </li>
 
      <li><p><i>Navigate</i>: <span>Navigate an <code>iframe</code> or <code>frame</code></span>
-     given <var>element</var>, <var>url</var>, and <var>referrerPolicy</var>.</p></li>
+     given <var>element</var>, <var>url</var>, <var>referrerPolicy</var>, and
+     <var>acMapping</var>.</p></li>
     </ol>
    </li>
   </ol>
@@ -35710,8 +35723,9 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
   <div algorithm>
   <p>To <dfn>navigate an <code>iframe</code> or <code>frame</code></dfn> given an element
   <var>element</var>, a <span>URL</span> <var>url</var>, a <span>referrer policy</span>
-  <var>referrerPolicy</var>, an optional string-or-null <var>srcdocString</var> (default
-  null), and an optional boolean <var>initialInsertion</var> (default false):</p>
+  <var>referrerPolicy</var>, an <span>Async Context Mapping</span> <var>acMapping</var>,
+  an optional string-or-null <var>srcdocString</var> (default null), and an optional boolean
+  <var>initialInsertion</var> (default false):</p>
 
   <ol>
    <li><p>Let <var>historyHandling</var> be "<code
@@ -35741,8 +35755,10 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
    navigable</span> to <var>url</var> using <var>element</var>'s <span>node document</span>, with
    <i data-x="navigation-hh">historyHandling</i> set to <var>historyHandling</var>, <i
    data-x="navigation-referrer-policy">referrerPolicy</i> set to <var>referrerPolicy</var>, <i
-   data-x="navigation-resource">documentResource</i> set to <var>srcdocString</var>, and <i
-   data-x="navigation-initial-insertion">initialInsertion</i> set to <var>initialInsertion</var>.</p></li>
+   data-x="navigation-resource">documentResource</i> set to <var>srcdocString</var>, <i
+   data-x="navigation-initial-insertion">initialInsertion</i> set to <var>initialInsertion</var>,
+   and <i data-x="navigation-container-async-context-mapping">containerAsyncContextMapping</i> set
+   to <var>acMapping</var>.</p></li>
   </ol>
   </div>
 
@@ -35752,7 +35768,8 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
 
   <div algorithm>
   <p>To run the <dfn>iframe load event steps</dfn>, given an <code>iframe</code> element
-  <var>element</var>:</p>
+  <var>element</var> and an optional <span>Async Context Mapping</span>-or-null <var>acMapping</var>
+  (default null):</p>
 
   <ol>
    <li><p><span>Assert</span>: <var>element</var>'s <span>content navigable</span> is not
@@ -35803,7 +35820,8 @@ interface <dfn interface>HTMLIFrameElement</dfn> : <span>HTMLElement</span> {
    <li><p>Set <var>childDocument</var>'s <span>iframe load in progress</span> flag.</p></li>
 
    <li><p><span data-x="concept-event-fire">Fire an event</span> named <code
-   data-x="event-load">load</code> at <var>element</var>.</p></li>
+   data-x="event-load">load</code> at <var>element</var>, with <var>acMapping</var> if
+   that is non-null.</p></li>
 
    <li><p>Unset <var>childDocument</var>'s <span>iframe load in progress</span> flag.</p></li>
   </ol>
@@ -107975,9 +107993,22 @@ location.href = '#foo';</code></pre>
   data-x="uni-none">none</code>"), an optional <code>Element</code> <dfn
   data-x="navigation-source-element"><var>sourceElement</var></dfn> (default null), an optional
   boolean <dfn for="navigate"
-  data-x="navigation-initial-insertion"><var>initialInsertion</var></dfn> (default false), and an
+  data-x="navigation-initial-insertion"><var>initialInsertion</var></dfn> (default false), an
   optional <span>navigation API method tracker</span>-or-null <dfn for="navigate"
-  data-x="navigation-api-method-tracker"><var>apiMethodTracker</var></dfn> (default null):</p>
+  data-x="navigation-api-method-tracker"><var>apiMethodTracker</var></dfn> (default null), and an
+  optional <span>Async Context Mapping</span>-or-null <dfn for="navigate"
+  data-x="navigation-container-async-context-mapping"><var>containerAsyncContextMapping</var></dfn>
+  (default null):</p>
+
+  <p class="note"><var>containerAsyncContextMapping</var> is non-null only for navigations started
+  by the <span data-x="nav-container">container</span> element itself, e.g., by setting an
+  <code>iframe</code> element's <code data-x="attr-iframe-src">src</code> attribute. Navigations
+  started from inside the <span>navigable</span> &mdash; setting <code
+  data-x="dom-location-href">location.href</code>, <span data-x="following hyperlinks">following a
+  hyperlink</span>, or submitting a form &mdash; and <span data-x="traverse the history by a
+  delta">history traversals</span> reach this algorithm without it, so the <code
+  data-x="event-load">load</code> event fired at the container does not inherit their <span>Async
+  Context Mapping</span>.</p>
 
   <ol>
    <li><p>Let <var>cspNavigationType</var> be "<code data-x="">form-submission</code>" if
@@ -108188,8 +108219,8 @@ location.href = '#foo';</code></pre>
      <span>navigate to a <code>javascript:</code> URL</span> given <var>navigable</var>,
      <var>url</var>, <var>historyHandling</var>, <var>sourceSnapshotParams</var>,
      <var>initiatorOriginSnapshot</var>, <var>userInvolvement</var>,
-     <var>cspNavigationType</var>, <var>initialInsertion</var>, and
-     <var>navigationId</var>.</p></li>
+     <var>cspNavigationType</var>, <var>initialInsertion</var>, <var>navigationId</var>, and
+     <var>containerAsyncContextMapping</var>.</p></li>
 
      <li><p>Return.</p></li>
     </ol>
@@ -108443,7 +108474,8 @@ location.href = '#foo';</code></pre>
       given <var>navigable</var>, "<code
       data-x="dom-navigationtimingtype-navigate">navigate</code>", <var>sourceSnapshotParams</var>,
       <var>targetSnapshotParams</var>, <var>userInvolvement</var>, <var>navigationId</var>,
-      <var>navigationParams</var>, <var>cspNavigationType</var>, with <i
+      <var>navigationParams</var>, <var>cspNavigationType</var>,
+      <var>containerAsyncContextMapping</var>, with <i
       data-x="attempt-to-populate-allow-post">allowPOST</i> set to true and <i
       data-x="attempt-to-populate-completion-steps">completionSteps</i> set to the following
       step:</p>
@@ -108585,8 +108617,9 @@ location.href = '#foo';</code></pre>
   behavior</span> <var>historyHandling</var>, a <span>source snapshot params</span>
   <var>sourceSnapshotParams</var>, an <span>origin</span> <var>initiatorOrigin</var>, a <span>user
   navigation involvement</span> <var>userInvolvement</var>, a string
-  <var>cspNavigationType</var>, a boolean <var>initialInsertion</var>, and a <span>navigation
-  ID</span> <var>navigationId</var>:</p>
+  <var>cspNavigationType</var>, a boolean <var>initialInsertion</var>, a <span>navigation ID</span>
+  <var>navigationId</var>, and an <span>Async Context Mapping</span>-or-null
+  <var>containerAsyncContextMapping</var>:</p>
 
   <ol>
    <li><p><span>Assert</span>: <var>historyHandling</var> is "<code
@@ -108627,7 +108660,8 @@ location.href = '#foo';</code></pre>
      <li><p>If <var>initialInsertion</var> is true and <var>targetNavigable</var>'s <span
      data-x="nav-document">active document</span>'s <span>is initial
      <code>about:blank</code></span> is true, then run the <span>iframe load event steps</span>
-     given <var>targetNavigable</var>'s <span data-x="nav-container">container</span>.</p></li>
+     given <var>targetNavigable</var>'s <span data-x="nav-container">container</span> and
+     <var>containerAsyncContextMapping</var>.</p></li>
 
      <li><p>Return.</p></li>
     </ol>
@@ -108638,6 +108672,10 @@ location.href = '#foo';</code></pre>
 
    <li><p><span>Assert</span>: <var>initiatorOrigin</var> is <var>newDocument</var>'s <span
    data-x="concept-document-origin">origin</span>.</p></li>
+
+   <li><p>Set <var>newDocument</var>'s <span data-x="document container load Async Context
+   Mapping">container load Async Context Mapping</span> to
+   <var>containerAsyncContextMapping</var>.</p></li>
 
    <li><p>Let <var>entryToReplace</var> be <var>targetNavigable</var>'s <span
    data-x="nav-active-history-entry">active session history entry</span>.</p></li>
@@ -109852,7 +109890,8 @@ location.href = '#foo';</code></pre>
   <var>userInvolvement</var>, an optional <span>navigation ID</span>-or-null <var>navigationId</var>
   (default null), an optional <span>navigation params</span>-or-null <var>navigationParams</var>
   (default null), an optional string <var>cspNavigationType</var> (default "<code
-  data-x="">other</code>"), an optional boolean <dfn
+  data-x="">other</code>"), an optional <span>Async Context Mapping</span>-or-null
+  <var>containerAsyncContextMapping</var> (default null), an optional boolean <dfn
   data-x="attempt-to-populate-allow-post"><var>allowPOST</var></dfn> (default false), and optional
   algorithm steps <dfn
   data-x="attempt-to-populate-completion-steps"><var>completionSteps</var></dfn> (default an empty
@@ -110108,6 +110147,11 @@ location.href = '#foo';</code></pre>
       data-x="document-state-document">document</span> is not null:</p>
 
       <ol>
+       <li><p>Set <var>entry</var>'s <span data-x="she-document-state">document state</span>'s <span
+       data-x="document-state-document">document</span>'s <span data-x="document container load
+       Async Context Mapping">container load Async Context Mapping</span> to
+       <var>containerAsyncContextMapping</var>.</p></li>
+
        <li><p>Set <var>entry</var>'s <span data-x="she-document-state">document state</span>'s
        <span data-x="document-state-ever-populated">ever populated</span> to true.</p></li>
 
@@ -113873,6 +113917,12 @@ new PaymentRequest(&hellip;); // Allowed to use
    <li><p>Set <var>document</var>'s <span>completely loaded time</span> to the current
    time.</p></li>
 
+   <li><p>Let <var>acMapping</var> be <var>document</var>'s <span data-x="document
+   container load Async Context Mapping">container load Async Context Mapping</span>.</p></li>
+
+   <li><p>Set <var>document</var>'s <span data-x="document container load Async Context
+   Mapping">container load Async Context Mapping</span> to null.</p></li>
+
    <li>
     <p>Let <var>container</var> be <var>document</var>'s <span>node navigable</span>'s <span
     data-x="nav-container">container</span>.</p>
@@ -113895,12 +113945,14 @@ new PaymentRequest(&hellip;); // Allowed to use
 
    <li><p>If <var>container</var> is an <code>iframe</code> element, then <span>queue an element
    task</span> on the <span>DOM manipulation task source</span> given <var>container</var> to run
-   the <span>iframe load event steps</span> given <var>container</var>.</p></li>
+   the <span>iframe load event steps</span> given <var>container</var> and
+   <var>acMapping</var>.</p></li>
 
    <li><p>Otherwise, if <var>container</var> is non-null, then <span>queue an element task</span> on
    the <span>DOM manipulation task source</span> given <var>container</var> to <span
    data-x="concept-event-fire">fire an event</span> named <code data-x="event-load">load</code> at
-   <var>container</var>.</p>
+   <var>container</var>, with <span>Async Context Mapping</span> <var>acMapping</var> if
+   that is not null.</p>
   </ol>
   </div>
 
@@ -114321,6 +114373,9 @@ new PaymentRequest(&hellip;); // Allowed to use
      "<code data-x="blocking-parser-aborted">parser-aborted</code>".</p></li>
     </ol>
    </li>
+
+   <li><p>Set <var>document</var>'s <span data-x="document container load Async Context
+   Mapping">container load Async Context Mapping</span> to null.</p></li>
   </ol>
   </div>
 
@@ -154916,6 +154971,8 @@ interface <dfn interface>HTMLFrameSetElement</dfn> : <span>HTMLElement</span> {
   data-x="process-frame-initial-insertion"><var>initialInsertion</var></dfn>:</p>
 
   <ol>
+   <li><p>Let <var>acMapping</var> be <span>AsyncContextSnapshot</span>().</p></li>
+
    <li><p>Let <var>url</var> be the result of running the <span>shared attribute processing steps
    for <code>iframe</code> and <code>frame</code> elements</span> given <var>element</var> and
    <var>initialInsertion</var>.</p></li>
@@ -154927,15 +154984,22 @@ interface <dfn interface>HTMLFrameSetElement</dfn> : <span>HTMLElement</span> {
     <var>initialInsertion</var> is true:</p>
 
     <ol>
-     <li><p><span data-x="concept-event-fire">Fire an event</span> named <code
-     data-x="event-load">load</code> at <var>element</var>.</p></li>
+     <li>
+      <p><span data-x="concept-event-fire">Fire an event</span> named <code
+      data-x="event-load">load</code> at <var>element</var>.</p>
+
+      <p class="note">This step runs synchronously with the one that would have captured the
+      <span>Async Context Mapping</span>, so the current <span>Async Context Mapping</span> is still
+      that same value.</p>
+     </li>
 
      <li><p>Return.</p></li>
     </ol>
    </li>
 
    <li><p><span>Navigate an <code>iframe</code> or <code>frame</code></span> given
-   <var>element</var>, <var>url</var>, the empty string, and <var>initialInsertion</var>.</p></li>
+   <var>element</var>, <var>url</var>, the empty string, <var>acMapping</var>, and
+   <var>initialInsertion</var>.</p></li>
   </ol>
   </div>
 
