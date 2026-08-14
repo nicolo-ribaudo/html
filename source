@@ -134276,8 +134276,16 @@ dictionary <dfn dictionary>StructuredSerializeOptions</dfn> {
    <li><p>Disentangle <var>initiatorPort</var> and <var>otherPort</var>, so that they are no longer
    entangled or associated with each other.</p></li>
 
-   <li><p><span data-x="concept-event-fire">Fire an event</span> named <code
-   data-x="event-close">close</code> at <var>otherPort</var>.</p></li>
+   <li>
+    <p><span data-x="concept-event-fire">Fire an event</span> named <code
+    data-x="event-close">close</code> at <var>otherPort</var> with <span>Async Context
+    Mapping</span> « ».</p>
+
+    <p class="note">The mapping is given explicitly because these steps are not queued: they run
+    synchronously with whatever caused the disentangling, and for <code
+    data-x="dom-MessagePort-close">close()</code> that is author code. <var>otherPort</var> did not
+    initiate the close, so the initiator's <span>Async Context Mapping</span> is not its.</p>
+   </li>
   </ol>
 
   <div class="note">
