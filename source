@@ -1,4 +1,5 @@
 <!-- -*- mode: Text; fill-column: 100 -*- vim: set textwidth=100 :
+ !   PR PREVIEW DIAGNOSTIC — no-op, safe to close without merging.
  !   EDITOR NOTES
  !
  !   Adding a new element involves editing the following sections:
