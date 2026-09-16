@@ -3236,6 +3236,8 @@ a.setAttribute('href', 'https://example.com/'); // change the content attribute 
      <li>The <dfn data-x-href="https://tc39.es/proposal-async-context/#async-context-mapping">Async Context Mapping</dfn> specification type</li>
      <li>The <dfn data-x-href="https://tc39.es/proposal-async-context/#sec-asynccontextsnapshot">AsyncContextSnapshot</dfn> abstract operation</li>
      <li>The <dfn data-x-href="https://tc39.es/proposal-async-context/#sec-asynccontextswap">AsyncContextSwap</dfn> abstract operation</li>
+     <li>The <dfn data-x-href="https://tc39.es/proposal-async-context/#sec-createasynccontextsnapshotobject">CreateAsyncContextSnapshotObject</dfn> abstract operation</li>
+     <li>The <dfn data-x-href="https://tc39.es/proposal-async-context/#sec-asynccontext.snapshot-objects"><code>AsyncContext.Snapshot</code></dfn> class</li>
     </ul>
    </dd>
 
@@ -117934,14 +117936,21 @@ new PaymentRequest(&hellip;); // Allowed to use
   <p>A <span>global object</span> has an <dfn for="global object">in error reporting mode</dfn>
   boolean, which is initially false.</p>
 
-  <p>A <span>global object</span> has an <dfn>outstanding rejected promises weak set</dfn>, a
-  <span>set</span> of <code data-x="idl-Promise">Promise</code> objects, initially empty. This set
-  must not create strong references to any of its members, and implementations are free to limit
-  its size in an <span>implementation-defined</span> manner, e.g., by removing old entries from it
-  when new ones are added.</p>
+  <p>A <span>global object</span> has an <dfn>outstanding rejected promises weak map</dfn>, a
+  <span>map</span> from <code data-x="idl-Promise">Promise</code> objects to <span>Async Context
+  Mapping</span>s, initially empty. This map must not create strong references to any of its keys,
+  and implementations are free to limit its size in an <span>implementation-defined</span> manner,
+  e.g., by removing old entries from it when new ones are added.</p>
 
-  <p>A <span>global object</span> has an <dfn>about-to-be-notified rejected promises list</dfn>, a
-  <span>list</span> of <code data-x="idl-Promise">Promise</code> objects, initially empty.</p>
+  <p>A <span>global object</span> has an <dfn>about-to-be-notified rejected promises map</dfn>, an
+  <span>ordered map</span> from <code data-x="idl-Promise">Promise</code> objects to <span>Async
+  Context Mapping</span>s, initially empty.</p>
+
+  <p class="note">The <span>Async Context Mapping</span> recorded for a promise is the one that was
+  current when it was rejected. It is not used to fire the event — <code
+  data-x="event-unhandledrejection">unhandledrejection</code> fires in the empty mapping like any
+  other queued event — but is exposed to listeners through the event's <code
+  data-x="dom-PromiseRejectionEvent-asyncContextSnapshot">asyncContextSnapshot</code> attribute.</p>
 
   <p>A <span>global object</span> has an <dfn data-x="concept-global-import-map">import map</dfn>,
   initially an <span>empty import map</span>.</p>
@@ -120547,10 +120556,23 @@ document.querySelector("button").addEventListener("click", bound);
   data-x="report-exception-omitError"><var>omitError</var></dfn> (default false):</p>
 
   <ol>
+   <li>
+    <p>Let <var>acMapping</var> be <span>AsyncContextSnapshot</span>().</p>
+
+    <p class="note">This is the <span>Async Context Mapping</span> current when the exception
+    reaches these steps — the one the failing script or callback was invoked with — not the one that was
+    current where the exception was thrown. Unwinding has already restored that one by this point,
+    and nothing records it.</p>
+   </li>
+
    <li><p>Let <var>notHandled</var> be true.</p></li>
 
    <li><p>Let <var>errorInfo</var> be the result of <span data-x="extract-error">extracting error
    information</span> from <var>exception</var>.</p></li>
+
+   <li><p>Set <var>errorInfo</var>[<code
+   data-x="dom-ErrorEvent-asyncContextSnapshot">asyncContextSnapshot</code>] to
+   <span>CreateAsyncContextSnapshotObject</span>(<var>acMapping</var>).</p></li>
 
    <li>
     <p>Let <var>script</var> be a <span data-x="concept-script">script</span> found in an
@@ -120583,7 +120605,14 @@ document.querySelector("button").addEventListener("click", bound);
       the result of <span data-x="concept-event-fire">firing an event</span> named <code
       data-x="event-error">error</code> at <var>global</var>, using <code>ErrorEvent</code>, with
       the <code data-x="dom-Event-cancelable">cancelable</code> attribute initialized to true,
-      and additional attributes initialized according to <var>errorInfo</var>.</p>
+      additional attributes initialized according to <var>errorInfo</var>, and with <span>Async
+      Context Mapping</span> « ».</p>
+
+      <p class="note">These steps can run synchronously with the code that threw, so « » has to be
+      given explicitly; it would not happen by default the way it does for a queued event. The
+      mapping the exception was reported in is exposed through the event's <code
+      data-x="dom-ErrorEvent-asyncContextSnapshot">asyncContextSnapshot</code> attribute
+      instead.</p>
 
       <p class="note">Returning true in an event handler cancels the event per <span>the event
       handler processing algorithm</span>.</p>
@@ -120677,6 +120706,7 @@ interface <dfn interface>ErrorEvent</dfn> : <span>Event</span> {
   readonly attribute unsigned long <span data-x="dom-ErrorEvent-lineno">lineno</span>;
   readonly attribute unsigned long <span data-x="dom-ErrorEvent-colno">colno</span>;
   readonly attribute any <span data-x="dom-ErrorEvent-error">error</span>;
+  readonly attribute <span data-x="idl-object">object</span>? <span data-x="dom-ErrorEvent-asyncContextSnapshot">asyncContextSnapshot</span>;
 };
 
 dictionary <dfn dictionary>ErrorEventInit</dfn> : <span>EventInit</span> {
@@ -120685,12 +120715,25 @@ dictionary <dfn dictionary>ErrorEventInit</dfn> : <span>EventInit</span> {
   unsigned long lineno = 0;
   unsigned long colno = 0;
   any error;
+  <span data-x="idl-object">object</span>? asyncContextSnapshot = null;
 };</code></pre>
 
   <div algorithm>
   <p>The <dfn attribute for="ErrorEvent"><code data-x="dom-ErrorEvent-message">message</code></dfn>
   attribute must return the value it was initialized to. It represents the error message.</p>
   </div>
+
+  <div algorithm>
+  <p>The <dfn attribute for="ErrorEvent"><code
+  data-x="dom-ErrorEvent-asyncContextSnapshot">asyncContextSnapshot</code></dfn> attribute must
+  return the value it was initialized to. It is an <code>AsyncContext.Snapshot</code> object
+  representing the <span>Async Context Mapping</span> that was current when the exception reached
+  <span>report an exception</span>, or null for an event the author constructed.</p>
+  </div>
+
+  <p class="note">The event itself is fired in the empty <span>Async Context Mapping</span>, so a
+  listener does not run inside the reported mapping; it reads it from here. See
+  <ref>JSASYNCCONTEXT</ref> for what can be done with a snapshot.</p>
 
   <div algorithm>
   <p>The <dfn attribute for="ErrorEvent"><code
@@ -120736,20 +120779,21 @@ dictionary <dfn dictionary>ErrorEventInit</dfn> : <span>EventInit</span> {
   <var>global</var>:</p>
 
   <ol>
-   <li><p>Let <var>list</var> be a <span data-x="list clone">clone</span> of <var>global</var>'s
-   <span>about-to-be-notified rejected promises list</span>.</p></li>
+   <li><p>Let <var>map</var> be <var>global</var>'s <span>about-to-be-notified rejected promises
+   map</span>.</p></li>
 
-   <li><p>If <var>list</var> <span data-x="list is empty">is empty</span>, then return.</p></li>
+   <li><p>If <var>map</var> is <span data-x="map empty">empty</span>, then return.</p></li>
 
-   <li><p><span data-x="list empty">Empty</span> <var>global</var>'s <span>about-to-be-notified
-   rejected promises list</span>.</p></li>
+   <li><p>Set <var>global</var>'s <span>about-to-be-notified rejected promises map</span> to a new
+   <span>ordered map</span>.</p></li>
 
    <li>
     <p><span>Queue a global task</span> on the <span>DOM manipulation task source</span> given
     <var>global</var> to run the following step:</p>
 
     <ol>
-     <li><p><span data-x="list iterate">For each</span> promise <var>p</var> of <var>list</var>:</p>
+     <li><p><span data-x="map iterate">For each</span> <var>p</var> -> <var>acMapping</var> of
+     <var>map</var>:</p>
 
       <ol>
        <li><p>If <var>p</var>.[[PromiseIsHandled]] is true, then <span>continue</span>.</p></li>
@@ -120759,16 +120803,18 @@ dictionary <dfn dictionary>ErrorEventInit</dfn> : <span>EventInit</span> {
        <var>global</var>, using <code>PromiseRejectionEvent</code>, with the <code
        data-x="dom-Event-cancelable">cancelable</code> attribute initialized to true, the <code
        data-x="dom-PromiseRejectionEvent-promise">promise</code> attribute initialized to
-       <var>p</var>, and the <code data-x="dom-PromiseRejectionEvent-reason">reason</code>
-       attribute initialized to <var>p</var>.[[PromiseResult]].</p></li>
+       <var>p</var>, the <code data-x="dom-PromiseRejectionEvent-reason">reason</code> attribute
+       initialized to <var>p</var>.[[PromiseResult]], and the <code
+       data-x="dom-PromiseRejectionEvent-asyncContextSnapshot">asyncContextSnapshot</code> attribute
+       initialized to <span>CreateAsyncContextSnapshotObject</span>(<var>acMapping</var>).</p></li>
 
        <li id="concept-promise-rejection-handled"><p id="concept-promise-rejection-nothandled">If
        <var>notCanceled</var> is true, then the user agent may report
        <var>p</var>.[[PromiseResult]] to a developer console.</p></li>
 
-       <li><p>If <var>p</var>.[[PromiseIsHandled]] is false, then <span data-x="set
-       append">append</span> <var>p</var> to <var>global</var>'s <span>outstanding rejected
-       promises weak set</span>.</p></li>
+       <li><p>If <var>p</var>.[[PromiseIsHandled]] is false, then <span data-x="map set">set</span>
+       <var>global</var>'s <span>outstanding rejected promises weak map</span>[<var>p</var>] to
+       <var>acMapping</var>.</p></li>
       </ol>
      </li>
     </ol>
@@ -120785,11 +120831,13 @@ interface <dfn interface>PromiseRejectionEvent</dfn> : <span>Event</span> {
 
   readonly attribute <span data-x="idl-object">object</span> <span data-x="dom-PromiseRejectionEvent-promise">promise</span>;
   readonly attribute any <span data-x="dom-PromiseRejectionEvent-reason">reason</span>;
+  readonly attribute <span data-x="idl-object">object</span>? <span data-x="dom-PromiseRejectionEvent-asyncContextSnapshot">asyncContextSnapshot</span>;
 };
 
 dictionary <dfn dictionary>PromiseRejectionEventInit</dfn> : <span>EventInit</span> {
   required <span data-x="idl-object">object</span> promise;
   any reason;
+  <span data-x="idl-object">object</span>? asyncContextSnapshot = null;
 };</code></pre>
 
   <div algorithm>
@@ -120808,6 +120856,16 @@ dictionary <dfn dictionary>PromiseRejectionEventInit</dfn> : <span>EventInit</sp
   <p>The <dfn attribute for="PromiseRejectionEvent"><code
   data-x="dom-PromiseRejectionEvent-reason">reason</code></dfn> attribute must return the value it
   was initialized to. It represents the rejection reason for the promise.</p>
+  </div>
+
+  <div algorithm>
+  <p>The <dfn attribute for="PromiseRejectionEvent"><code
+  data-x="dom-PromiseRejectionEvent-asyncContextSnapshot">asyncContextSnapshot</code></dfn>
+  attribute must return the value it was initialized to. It is an <code>AsyncContext.Snapshot</code>
+  object representing the <span>Async Context Mapping</span> that was current when the promise
+  rejected, for <code data-x="event-unhandledrejection">unhandledrejection</code>, or when the
+  rejection was handled, for <code data-x="event-rejectionhandled">rejectionhandled</code>. It is
+  null for an event the author constructed.</p>
   </div>
 
 
@@ -122366,8 +122424,9 @@ dictionary <dfn dictionary>PromiseRejectionEventInit</dfn> : <span>EventInit</sp
     <p>If <var>operation</var> is "<code data-x="">reject</code>":</p>
 
     <ol>
-     <li><p><span data-x="list append">Append</span> <var>promise</var> to <var>global</var>'s
-     <span>about-to-be-notified rejected promises list</span>.</p></li>
+     <li><p><span data-x="map set">Set</span> <var>global</var>'s <span>about-to-be-notified
+     rejected promises map</span>[<var>promise</var>] to
+     <span>AsyncContextSnapshot</span>().</p></li>
     </ol>
    </li>
 
@@ -122375,23 +122434,31 @@ dictionary <dfn dictionary>PromiseRejectionEventInit</dfn> : <span>EventInit</sp
     <p>If <var>operation</var> is "<code data-x="">handle</code>":</p>
 
     <ol>
-     <li><p>If <var>global</var>'s <span>about-to-be-notified rejected promises list</span> <span
-     data-x="list contains">contains</span> <var>promise</var>, then <span data-x="list
-     remove">remove</span> <var>promise</var> from that list and return.</p></li>
+     <li><p>If <var>global</var>'s <span>about-to-be-notified rejected promises map</span> <span
+     data-x="map exists">contains</span> <var>promise</var>, then <span data-x="map
+     remove">remove</span> <var>global</var>'s <span>about-to-be-notified rejected promises
+     map</span>[<var>promise</var>] and return.</p></li>
 
-     <li><p>If <var>global</var>'s <span>outstanding rejected promises weak set</span> does not
-     <span data-x="list contains">contain</span> <var>promise</var>, then return.</p></li>
+     <li><p>If <var>global</var>'s <span>outstanding rejected promises weak map</span> does not
+     <span data-x="map exists">contain</span> <var>promise</var>, then return.</p></li>
 
-     <li><p><span data-x="list remove">Remove</span> <var>promise</var> from <var>global</var>'s
-     <span>outstanding rejected promises weak set</span>.</p></li>
+     <li><p><span data-x="map remove">Remove</span> <var>global</var>'s <span>outstanding rejected
+     promises weak map</span>[<var>promise</var>].</p></li>
+
+     <li><p>Let <var>acMapping</var> be <span>AsyncContextSnapshot</span>().</p></li>
 
      <li><p><span>Queue a global task</span> on the <span>DOM manipulation task source</span> given
      <var>global</var> to <span data-x="concept-event-fire">fire an event</span> named <code
      data-x="event-rejectionhandled">rejectionhandled</code> at <var>global</var>, using
      <code>PromiseRejectionEvent</code>, with the <code
      data-x="dom-PromiseRejectionEvent-promise">promise</code> attribute initialized to
-     <var>promise</var>, and the <code data-x="dom-PromiseRejectionEvent-reason">reason</code>
-     attribute initialized to <var>promise</var>.[[PromiseResult]].</p></li>
+     <var>promise</var>, the <code data-x="dom-PromiseRejectionEvent-reason">reason</code>
+     attribute initialized to <var>promise</var>.[[PromiseResult]], and the <code
+     data-x="dom-PromiseRejectionEvent-asyncContextSnapshot">asyncContextSnapshot</code> attribute
+     initialized to <span>CreateAsyncContextSnapshotObject</span>(<var>acMapping</var>).</p></li>
+
+     <li><p class="note"><var>acMapping</var> is the mapping that was current when the rejection was
+     handled, not the one in which the promise rejected.</p></li>
     </ol>
    </li>
   </ol>
