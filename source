@@ -617,9 +617,6 @@ interface <dfn data-x="">Example</dfn> {
 
   <p>Variables are marked up like <var ignore>this</var>.</p>
 
-  <p w-nodev>In an algorithm, steps in <span data-x="synchronous section">synchronous
-  sections</span> are marked with &#x231B;.</p>
-
   <p>In some cases, requirements are given in the form of lists with conditions and corresponding
   requirements. In such cases, the requirements that apply to a condition are always the first set
   of requirements that follow the condition, even in the case of there being multiple sets of
@@ -34274,10 +34271,10 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
   is involved.</p>
 
   <ol>
-   <li><p><span>Await a stable state</span>. The <span>synchronous section</span>
-   consists of all the remaining steps of this algorithm until the algorithm says the
-   <span>synchronous section</span> has ended. (Steps in <span data-x="synchronous
-   section">synchronous sections</span> are marked with &#x231B;.)</p></li>
+   <li><p><span>Queue an element task</span> on the <span>DOM manipulation task source</span> given
+   the <code>img</code> element to continue running the remaining steps of this algorithm, until it
+   says to continue <span>in parallel</span>. (Steps that run in that <span
+   data-x="concept-task">task</span> are marked with &#x231B;.)</p></li>
 
    <li><p>&#x231B; If the <code>img</code> element does not <span>use <code>srcset</code> or
    <code>picture</code></span>, its <span>node document</span> is not <span>fully active</span>, it has
@@ -34324,8 +34321,7 @@ was an English &lt;a href="/wiki/Music_hall">music hall&lt;/a> singer, ...</code
 
    <li><p>&#x231B; Set the element's <span>pending request</span> to <var>image request</var>.</p></li>
 
-   <li><p>End the <span>synchronous section</span>, continuing the remaining steps
-   <span>in parallel</span>.</p></li>
+   <li><p>Continue running the remaining steps <span>in parallel</span>.</p></li>
 
    <li>
     <p>Let <var>finishUpdate</var> be the following steps:</p>
@@ -38858,11 +38854,12 @@ interface <dfn interface>MediaError</dfn> {
   <div algorithm>
   <p>The <dfn data-x="concept-media-load-algorithm">resource selection algorithm</dfn> for a
   <span>media element</span> is as follows. This algorithm is always invoked as part of a <span data-x="concept-task">task</span>, but one
-  of the first steps in the algorithm is to return and continue running the remaining steps
-  <span>in parallel</span>. In addition, this algorithm interacts
-  closely with the <span>event loop</span> mechanism; in particular, it has <span data-x="synchronous
-  section">synchronous sections</span> (which are triggered as part of the <span>event loop</span>
-  algorithm). Steps in such sections are marked with &#x231B;.</p>
+  of the first steps in the algorithm is to return and continue running the remaining steps in a
+  <span>microtask</span>, and later <span>in parallel</span>. While running <span>in
+  parallel</span>, the algorithm repeatedly queues <span data-x="concept-task">tasks</span> to
+  continue running some of its steps on the <span>event loop</span>. Steps that run in such a
+  <span>microtask</span> or <span data-x="concept-task">task</span> are marked with
+  &#x231B;.</p>
 
   <ol>
    <!-- precondition: networkState == NETWORK_EMPTY or we're coming straight from the algorithm above
@@ -38873,11 +38870,10 @@ interface <dfn interface>MediaError</dfn> {
 
    <li><p>Set the element's <span>show poster flag</span> to true.</p></li>
 
-   <li><p><span>Await a stable state</span>, allowing the <span
-   data-x="concept-task">task</span> that invoked this algorithm to continue. The <span>synchronous
-   section</span> consists of all the remaining steps of this algorithm until the algorithm says the
-   <span>synchronous section</span> has ended. (Steps in <span data-x="synchronous
-   section">synchronous sections</span> are marked with &#x231B;.)</p></li>
+   <li><p><span>Queue a microtask</span> to continue running the remaining steps of this algorithm,
+   until it says to continue <span>in parallel</span>, allowing the <span
+   data-x="concept-task">task</span> that invoked this algorithm to continue. (Steps that run in
+   that <span>microtask</span> are marked with &#x231B;.)</p></li>
 
    <li><p>&#x231B; If the <span>media element</span>'s <span>lazy loading attribute</span> is in the
    <span data-x="attr-loading-eager-state">Eager</span> state or <span
@@ -38917,7 +38913,7 @@ interface <dfn interface>MediaError</dfn> {
 
      <!-- no need to set the <span>show poster flag</span> to true since we set it up there already -->
 
-     <li><p>End the <span>synchronous section</span> and return.</li>
+     <li><p>Return.</p></li>
     </ol>
    </li>
 
@@ -38941,8 +38937,7 @@ interface <dfn interface>MediaError</dfn> {
        <li><p>&#x231B; Set the <code data-x="dom-media-currentSrc">currentSrc</code> attribute to
        the empty string.</p></li>
 
-       <li><p>End the <span>synchronous section</span>, continuing the remaining steps
-       <span>in parallel</span>.</p></li>
+       <li><p>Continue running the remaining steps <span>in parallel</span>.</p></li>
 
        <li><p>Run the <span data-x="concept-media-load-resource">resource fetch algorithm</span>
        with the <span>assigned media provider object</span>. If that algorithm returns without
@@ -38966,8 +38961,8 @@ interface <dfn interface>MediaError</dfn> {
      <dd>
       <ol>
        <li><p>&#x231B; If the <code data-x="attr-media-src">src</code>
-       attribute's value is the empty string, then end the <span>synchronous section</span>, and jump
-       down to the <i>failed with attribute</i> step below.</p></li>
+       attribute's value is the empty string, then jump down to the <i>failed with attribute</i> step
+       below, continuing <span>in parallel</span>.</p></li>
 
        <li><p>&#x231B; Let <var>urlRecord</var> be the result of <span>encoding-parsing a URL</span>
        given the <code data-x="attr-media-src">src</code> attribute's value, relative to the
@@ -38980,8 +38975,7 @@ interface <dfn interface>MediaError</dfn> {
        data-x="dom-media-currentSrc">currentSrc</code> attribute to the result of applying the <span
        data-x="concept-url-serializer">URL serializer</span> to <var>urlRecord</var>.</p></li>
 
-       <li><p>End the <span>synchronous section</span>, continuing the remaining steps
-       <span>in parallel</span>.</p></li>
+       <li><p>Continue running the remaining steps <span>in parallel</span>.</p></li>
 
        <li><p>If <var>urlRecord</var> is not failure, then run the <span
        data-x="concept-media-load-resource">resource fetch algorithm</span> with
@@ -39044,14 +39038,13 @@ interface <dfn interface>MediaError</dfn> {
 
        <li><p>&#x231B; <i>Process candidate</i>: If <var>candidate</var> does not have a
        <code data-x="attr-source-src">src</code> attribute, or if its <code
-       data-x="attr-source-src">src</code> attribute's value is the empty string, then end the
-       <span>synchronous section</span>, and jump down to the <i>failed with elements</i> step
-       below.</p></li>
+       data-x="attr-source-src">src</code> attribute's value is the empty string, then jump down to the
+       <i>failed with elements</i> step below, continuing <span>in parallel</span>.</p></li>
 
        <li><p>&#x231B; If <var>candidate</var> has a <code data-x="attr-source-media">media</code>
        attribute whose value does not <span data-x="matches the environment">match the
-       environment</span>, then end the <span>synchronous section</span>, and jump down to the
-       <i>failed with elements</i> step below.</p></li>
+       environment</span>, then jump down to the <i>failed with elements</i> step below, continuing
+       <span>in parallel</span>.</p></li>
 
        <li><p>&#x231B; Let <var>urlRecord</var> be the result of <span>encoding-parsing a URL</span>
        given <var>candidate</var>'s <code data-x="attr-media-src">src</code> attribute's value,
@@ -39060,21 +39053,21 @@ interface <dfn interface>MediaError</dfn> {
        <!-- i.e. changing <base> after src="" has no effect, but this is a terrible way of
             specifying that. We should more eagerly parse instead? -->
 
-       <li><p>&#x231B; If <var>urlRecord</var> is failure, then end the <span>synchronous
-       section</span>, and jump down to the <i>failed with elements</i> step below.</p></li>
+       <li><p>&#x231B; If <var>urlRecord</var> is failure, then jump down to the <i>failed with
+       elements</i> step below, continuing <span>in parallel</span>.</p></li>
 
        <li><p>&#x231B; If <var>candidate</var> has a <code
        data-x="attr-source-type">type</code> attribute whose value, when parsed as a <span>MIME
        type</span> (including any codecs described by the <code data-x="">codecs</code> parameter, for
        types that define that parameter), represents <span>a type that the user agent knows it cannot
-       render</span>, then end the <span>synchronous section</span>, and jump down to the <i>failed with elements</i> step below.</p></li>
+       render</span>, then jump down to the <i>failed with elements</i> step below, continuing <span>in
+       parallel</span>.</p></li>
 
        <li><p>&#x231B; Set the <code data-x="dom-media-currentSrc">currentSrc</code> attribute to
        the result of applying the <span data-x="concept-url-serializer">URL serializer</span> to
        <var>urlRecord</var>.</p></li>
 
-       <li><p>End the <span>synchronous section</span>, continuing the remaining steps
-       <span>in parallel</span>.</p></li>
+       <li><p>Continue running the remaining steps <span>in parallel</span>.</p></li>
 
        <li><p>Run the <span data-x="concept-media-load-resource">resource fetch algorithm</span>
        with <var>urlRecord</var>. If that algorithm returns without aborting <em>this</em> one,
@@ -39084,10 +39077,10 @@ interface <dfn interface>MediaError</dfn> {
        <span>media element</span> to <span data-x="concept-event-fire">fire an event</span> named
        <code data-x="event-source-error">error</code> at <var>candidate</var>.</p></li>
 
-       <li><p><span>Await a stable state</span>. The <span>synchronous section</span>
-       consists of all the remaining steps of this algorithm until the algorithm says the
-       <span>synchronous section</span> has ended. (Steps in <span data-x="synchronous
-       section">synchronous sections</span> are marked with &#x231B;.)</p></li>
+       <li><p><span>Queue a media element task</span> given the <span>media element</span> to
+       continue running the remaining steps of this algorithm, until it says to continue <span>in
+       parallel</span>. (Steps that run in that <span data-x="concept-task">task</span> are marked
+       with &#x231B;.)</p></li>
 
        <li><p>&#x231B; <span>Forget the media element's media-resource-specific
        tracks</span>.</p></li>
@@ -39117,16 +39110,15 @@ interface <dfn interface>MediaError</dfn> {
        to set the element's <span>delaying-the-load-event flag</span> to false. This stops <span
        data-x="delay the load event">delaying the load event</span>.</p></li>
 
-       <li><p>End the <span>synchronous section</span>, continuing the remaining steps
-       <span>in parallel</span>.</p></li>
+       <li><p>Continue running the remaining steps <span>in parallel</span>.</p></li>
 
        <li><p>Wait until the node after <var>pointer</var> is a node other than the end of
        the list. (This step might wait forever.)</p></li>
 
-       <li><p><span>Await a stable state</span>. The <span>synchronous section</span>
-       consists of all the remaining steps of this algorithm until the algorithm says the
-       <span>synchronous section</span> has ended. (Steps in <span data-x="synchronous
-       section">synchronous sections</span> are marked with &#x231B;.)</p></li>
+       <li><p><span>Queue a media element task</span> given the <span>media element</span> to
+       continue running the remaining steps of this algorithm, until it says to continue <span>in
+       parallel</span>. (Steps that run in that <span data-x="concept-task">task</span> are marked
+       with &#x231B;.)</p></li>
 
        <li><p>&#x231B; If the <span>media element</span>'s <span>lazy loading attribute</span> is in
        the <span data-x="attr-loading-eager-state">Eager</span> state or <span
@@ -41196,9 +41188,9 @@ interface <dfn interface>MediaError</dfn> {
   frames.</p>
 
   <div algorithm>
-  <p>Any time the user agent <span data-x="await a stable state">provides a stable state</span>,
-  the <span>official playback position</span> must be set to the <span>current playback
-  position</span>.</p> <!-- cross-ref is intentionally to the other term, to help find this -->
+  <p>Any time the user agent <span data-x="perform a microtask checkpoint">performs a microtask
+  checkpoint</span>, the <span>official playback position</span> must be set to the <span>current
+  playback position</span>.</p>
   </div>
 
   <div algorithm>
@@ -41446,11 +41438,10 @@ interface <dfn interface>MediaError</dfn> {
   from a <code>Document</code></span>, the user agent must run the following steps:</p>
 
   <ol>
-   <li><p><span>Await a stable state</span>, allowing the <span
-   data-x="concept-task">task</span> that removed the <span>media element</span> from the
-   <code>Document</code> to continue. The <span>synchronous section</span> consists of all the
-   remaining steps of this algorithm. (Steps in the <span>synchronous section</span> are marked with
-   &#x231B;.)</p></li>
+   <li><p><span>Queue a microtask</span> to continue running the remaining steps of this algorithm,
+   allowing the <span data-x="concept-task">task</span> that removed the <span>media element</span>
+   from the <code>Document</code> to continue. (Steps that run in that <span>microtask</span> are
+   marked with &#x231B;.)</p></li>
 
    <li><p>&#x231B; If the <span>media element</span> is <span>in a document</span>, return.</p></li>
 
@@ -41502,9 +41493,9 @@ interface <dfn interface>MediaError</dfn> {
   <div algorithm>
   <p>When the user agent is required to <dfn data-x="dom-media-seek">seek</dfn> to a particular <var>new playback position</var> in the <span>media resource</span>, optionally with the
   <i>approximate-for-speed</i> flag set, it means that the user agent must run the following steps.
-  This algorithm interacts closely with the <span>event loop</span> mechanism; in particular, it has
-  a <span>synchronous section</span> (which is triggered as part of the <span>event loop</span>
-  algorithm). Steps in that section are marked with &#x231B;.</p>
+  Most of this algorithm runs <span>in parallel</span>, but its last steps run in a <span
+  data-x="concept-task">task</span> queued on the <span>media element</span>. Those steps are marked
+  with &#x231B;.</p>
 
   <ol>
    <li><p>Set the <span>media element</span>'s <span>show poster flag</span> to false.</p></li>
@@ -41583,9 +41574,9 @@ interface <dfn interface>MediaError</dfn> {
    the <var>new playback position</var> is available, and, if it is, until it has decoded
    enough data to play back that position.</p></li>
 
-   <li><p><span>Await a stable state</span>. The <span>synchronous section</span> consists of all
-   the remaining steps of this algorithm. (Steps in the <span>synchronous section</span> are marked
-   with &#x231B;.)</p></li>
+   <li><p><span>Queue a media element task</span> given the <span>media element</span> to continue
+   running the remaining steps of this algorithm. (Steps that run in that <span
+   data-x="concept-task">task</span> are marked with &#x231B;.)</p></li>
 
    <li><p>&#x231B; Set the <code data-x="dom-media-seeking">seeking</code> IDL attribute to
    false.</p></li>
@@ -42847,9 +42838,9 @@ interface <dfn interface>VideoTrack</dfn> {
   <div algorithm>
   <p>When a user agent is to <dfn>start the <code>track</code> processing model</dfn> for a
   <span>text track</span> and its <code>track</code> element, it must run the following algorithm.
-  This algorithm interacts closely with the <span>event loop</span> mechanism; in particular, it has
-  a <span>synchronous section</span> (which is triggered as part of the <span>event loop</span>
-  algorithm). The steps in that section are marked with &#x231B;.</p>
+  Most of this algorithm runs <span>in parallel</span>, but some of its steps run in a <span
+  data-x="concept-task">task</span> queued on the <code>track</code> element. Those steps are marked
+  with &#x231B;.</p>
 
   <ol>
    <li><p>If another occurrence of this algorithm is already running for this <span>text
@@ -42866,9 +42857,10 @@ interface <dfn interface>VideoTrack</dfn> {
    <li><p>Run the remainder of these steps <span>in parallel</span>, allowing whatever caused these steps to
    run to continue.</p></li>
 
-   <li><p><i>Top</i>: <span>Await a stable state</span>. The <span>synchronous section</span>
-   consists of the following steps. (The steps in the <span>synchronous section</span> are marked
-   with &#x231B;.)</p></li>
+   <li><p><i>Top</i>: <span>Queue an element task</span> on the <span>DOM manipulation task
+   source</span> given the <code>track</code> element to continue running the remaining steps of
+   this algorithm, until it says to continue <span>in parallel</span>. (Steps that run in that <span
+   data-x="concept-task">task</span> are marked with &#x231B;.)</p></li>
 
    <li><p>&#x231B; Set the <span>text track readiness state</span> to <span data-x="text track
    loading">loading</span>.</p></li>
@@ -42881,8 +42873,7 @@ interface <dfn interface>VideoTrack</dfn> {
    data-x="attr-media-crossorigin">crossorigin</code> content attribute. Otherwise, let
    <var>corsAttributeState</var> be <span data-x="attr-crossorigin-none">No CORS</span>.</p></li>
 
-   <li><p>End the <span>synchronous section</span>, continuing the remaining steps
-   <span>in parallel</span>.</p></li>
+   <li><p>Continue running the remaining steps <span>in parallel</span>.</p></li>
 
    <li>
     <p>If <var>URL</var> is not the empty string:
@@ -123931,25 +123922,6 @@ import "https://example.com/foo/../module2.mjs";</code></pre>
    <li><p><span>Record timing info for microtask checkpoint</span>.</p></li>
   </ol>
   </div>
-
-  <hr>
-
-  <div algorithm>
-  <p>When an algorithm running <span>in parallel</span> is to <dfn>await a stable state</dfn>, the
-  user agent must <span>queue a microtask</span> that runs the following steps, and must then stop
-  executing (execution of the algorithm resumes when the microtask is run, as described in the
-  following steps):</p>
-
-  <ol>
-   <li><p>Run the algorithm's <dfn>synchronous section</dfn>.</p></li>
-
-   <li><p>Resume execution of the algorithm <span>in parallel</span>, if appropriate, as described
-   in the algorithm's steps.</p></li>
-  </ol>
-  </div>
-
-  <p class="note">Steps in <span data-x="synchronous section">synchronous sections</span> are marked
-  with &#x231B;.</p>
 
   <hr>
 
